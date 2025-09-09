@@ -19,6 +19,7 @@ greenlet = "^3.2.4"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.12.12"
 alembic = "^1.16.5"
+pre-commit = "^4.3.0"
 
 [build-system]
 requires = ["poetry-core"]

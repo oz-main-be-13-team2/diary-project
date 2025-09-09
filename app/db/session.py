@@ -15,7 +15,7 @@ engine = create_async_engine(
 )
 
 # 비동기 세션 생성기 / DB와 상호작용
-async_session = async_sessionmaker(
+async_session_maker = async_sessionmaker(
     engine,
     class_=AsyncSession,
     expire_on_commit=False # 커밋이 완료된 후에도 세션에 있는 객체들을 만료시키지 않도록 설정
@@ -24,5 +24,5 @@ async_session = async_sessionmaker(
 
 # Fastapi 의존성 주입 함수 / 각 요청마다 DB 세션 생성, 작업이 끝나면 닫는다
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session() as session:
+    async with async_session_maker() as session:
         yield session

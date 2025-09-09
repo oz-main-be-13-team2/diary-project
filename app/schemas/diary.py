@@ -1,27 +1,30 @@
-from datetime import datetime
 from pydantic import BaseModel, Field
-from typing import Optional
+from datetime import datetime
+from typing import Optional, List
 
+class DiaryBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200, description="일기 제목")
+    content: Optional[str] = Field(None, description="본문 내용")
+    quotes: Optional[str] = Field(None, description="스크랩한 명언")
 
-# 요청용 스키마
-class DiaryCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=500)
-    content: Optional[str] = None
-
+class DiaryCreate(DiaryBase):
+    pass
 
 class DiaryUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=500)
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
     content: Optional[str] = None
+    quotes: Optional[str] = None
 
-
-# 응답용 스키마
-class DiaryResponse(BaseModel):
-    id: int
-    title: str
-    content: Optional[str]
-    created_at: datetime
-    updated_at: datetime
+class DiaryResponse(DiaryBase):
+    diary_id: int
     user_id: int
+    created_at: datetime
+    updated_at: Optional[datetime]
+    is_deleted: bool
 
     class Config:
-        from_attributes = True  # SQLAlchemy 모델 → Pydantic 변환 허용
+        orm_mode = True
+
+class DiaryListResponse(BaseModel):
+    total: int
+    items: List[DiaryResponse]

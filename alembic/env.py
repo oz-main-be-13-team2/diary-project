@@ -1,48 +1,47 @@
+import os
+import sys
+
+# ⭐ 변경: 프로젝트의 루트 경로를 직접 시스템 경로에 추가합니다.
+# 이렇게 하면 Alembic이 모든 폴더와 파일을 확실하게 찾을 수 있습니다.
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if project_root not in sys.path:
+    sys.path.append(project_root)
+
 import asyncio
 from logging.config import fileConfig
-
-from app.db.base import Base  # 🚨 실제 프로젝트 모델 Base로 바꿔주세요
-from app.db.session import engine
 
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from alembic import context
 
+from app.db.base import Base
+from app.db.session import engine
 
-# Alembic Config 객체 (alembic.ini 사용)
+from app.models.user import User
+from app.models.quote import Quote
+from app.models.question import Question
+from app.models.bookmark import Bookmark
+
 config = context.config
 
-# Logging 설정
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# target_metadata: 자동으로 마이그레이션 생성 시 참조
 target_metadata = Base.metadata
 
-
 def do_run_migrations(connection: AsyncEngine):
-    """
-    실제 migration 실행 로직 (동기 방식)
-    """
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
         dialect_opts={"paramstyle": "named"}
     )
-
     with context.begin_transaction():
         context.run_migrations()
 
-
 async def run_migrations_online():
-    """
-    비동기 DB 엔진 생성 후 migration 실행
-    """
     connectable = engine
-
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
-
 
 if __name__ == "__main__":
     asyncio.run(run_migrations_online())

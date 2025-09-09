@@ -35,6 +35,13 @@ import app.models.bookmark   # noqa: F401
 
 target_metadata = Base.metadata
 
+def run_migrations_offline():
+    """오프라인 모드: SQL 스크립트 생성"""
+    url = SQLALCHEMY_DATABASE_URL
+    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
+
+    with context.begin_transaction():
+        context.run_migrations()
 
 def do_run_migrations(connection):
     """동기 컨텍스트에서 Alembic 환경 구성 및 실행"""

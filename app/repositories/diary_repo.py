@@ -1,43 +1,47 @@
-from sqlalchemy.orm import Session
-from app.models.diary import Diary
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy import desc
 from typing import List, Optional
+from app.models.diary import Diary
 
-# 일기 생성
-def create_diary(db: Session, diary: Diary):
-    db.add(diary)
-    db.commit()
-    db.refresh(diary)  # 새로 생성된 데이터 반영
-    return diary
+class DiaryRepository:
+    # 일기 생성
+    async def create_diary(self, db: AsyncSession, diary: Diary) -> Diary:
+        db.add(diary)
+        await db.commit()
+        await db.refresh(diary)
+        return diary
 
-# 특정 일기 조회
-def get_diary(db: Session, diary_id: int) -> Optional[Diary]:
-    return db.query(Diary).filter(
-        Diary.diary_id == diary_id,
-        Diary.is_deleted.is_(False) # is_ 연산자 사용
-    ).first()
+    # 일기 ID로 조회
+    async def get_diary(self, db: AsyncSession, diary_id: int) -> Optional[Diary]:
+        result = await db.execute(select(Diary).where(Diary.id == diary_id, Diary.is_deleted == False))
+        return result.scalars().first()
 
-# 일기 목록 조회 (검색, 정렬, 페이징 지원)
-def get_diaries(db: Session, skip: int = 0, limit: int = 10, search: Optional[str] = None, sort_by: str = "created_at", desc: bool = True) -> List[Diary]:
-    query = db.query(Diary).filter(Diary.is_deleted.is_(False))  # is_ 연산자 사용
-    if search:  # 검색 조건
-        query = query.filter(Diary.title.contains(search) | Diary.content.contains(search))
-    # 정렬 조건
-    if desc:
-        query = query.order_by(getattr(Diary, sort_by).desc())
-    else:
-        query = query.order_by(getattr(Diary, sort_by))
-    return query.offset(skip).limit(limit).all()
+    # 작성자와 일기 ID로 조회 (권한 확인용)
+    async def get_diary_by_user(self, db: AsyncSession, diary_id: int, user_id: int) -> Optional[Diary]:
+        result = await db.execute(
+            select(Diary).where(Diary.id == diary_id, Diary.user_id == user_id, Diary.is_deleted == False)
+        )
+        return result.scalars().first()
 
-# 일기 수정
-def update_diary(db: Session, diary: Diary, updates: dict):
-    for key, value in updates.items():
-        setattr(diary, key, value)  # 속성 업데이트
-    db.commit()
-    db.refresh(diary)
-    return diary
+    # 검색 + 정렬 + 페이징
+    async def get_diaries(
+        self, db: AsyncSession, skip: int = 0, limit: int = 10, search: Optional[str] = None
+    ) -> List[Diary]:
+        query = select(Diary).where(Diary.is_deleted == False)
+        if search:
+            query = query.where(Diary.title.contains(search))
+        query = query.order_by(desc(Diary.created_at)).offset(skip).limit(limit)
+        result = await db.execute(query)
+        return result.scalars().all()
 
-# 일기 삭제 (소프트 삭제)
-def delete_diary(db: Session, diary: Diary):
-    diary.is_deleted = True
-    db.commit()
-    return diary
+    # 일기 수정
+    async def update_diary(self, db: AsyncSession, diary: Diary) -> Diary:
+        await db.commit()
+        await db.refresh(diary)
+        return diary
+
+    # 소프트 삭제
+    async def soft_delete_diary(self, db: AsyncSession, diary: Diary):
+        diary.is_deleted = True
+        await db.commit()

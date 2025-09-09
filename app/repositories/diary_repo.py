@@ -11,11 +11,14 @@ def create_diary(db: Session, diary: Diary):
 
 # 특정 일기 조회
 def get_diary(db: Session, diary_id: int) -> Optional[Diary]:
-    return db.query(Diary).filter(Diary.diary_id == diary_id, Diary.is_deleted == False).first()
+    return db.query(Diary).filter(
+        Diary.diary_id == diary_id,
+        Diary.is_deleted.is_(False) # is_ 연산자 사용
+    ).first()
 
 # 일기 목록 조회 (검색, 정렬, 페이징 지원)
 def get_diaries(db: Session, skip: int = 0, limit: int = 10, search: Optional[str] = None, sort_by: str = "created_at", desc: bool = True) -> List[Diary]:
-    query = db.query(Diary).filter(Diary.is_deleted == False)  # 삭제 안 된 데이터만
+    query = db.query(Diary).filter(Diary.is_deleted.is_(False))  # is_ 연산자 사용
     if search:  # 검색 조건
         query = query.filter(Diary.title.contains(search) | Diary.content.contains(search))
     # 정렬 조건

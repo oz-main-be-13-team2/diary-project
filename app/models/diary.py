@@ -16,6 +16,9 @@ class Diary(Base):
     # 일기 내용
     content = Column(Text, nullable=True)
 
+    # 스크래핑한 명언 추가
+    quote = Column(Text, nullable=True)  # 새로 추가
+
     # 작성 시간
     created_at = Column(DateTime, default=datetime.utcnow)
 

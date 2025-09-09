@@ -1,44 +1,41 @@
-import asyncio
 from logging.config import fileConfig
-
-from myapp.models import Base  # 🚨 실제 프로젝트 모델 Base로 바꿔주세요
-from sqlalchemy.ext.asyncio import create_async_engine
-
+from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Alembic Config 객체 (alembic.ini 사용)
+# FastAPI DB 설정 불러오기
+from app.db.base import Base  # Base 선언부
+from app.db.session import SQLALCHEMY_DATABASE_URL  # DB URL
+from app.models.diary import Diary  # Diary 모델
+
+# Alembic Config 객체
 config = context.config
+fileConfig(config.config_file_name)
 
-# Logging 설정
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
-
-# target_metadata: 자동으로 마이그레이션 생성 시 참조
+# Alembic이 추적할 메타데이터
 target_metadata = Base.metadata
 
-
-def do_run_migrations(connection):
-    """
-    실제 migration 실행 로직 (동기 방식)
-    """
-    context.configure(connection=connection, target_metadata=target_metadata)
+def run_migrations_offline():
+    """오프라인 모드: SQL 스크립트 생성"""
+    url = SQLALCHEMY_DATABASE_URL
+    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
 
     with context.begin_transaction():
         context.run_migrations()
 
-
-async def run_migrations_online():
-    """
-    비동기 DB 엔진 생성 후 migration 실행
-    """
-    connectable = create_async_engine(
-        config.get_main_option("sqlalchemy.url"),
-        future=True,
+def run_migrations_online():
+    """온라인 모드: 실제 DB에 적용"""
+    connectable = engine_from_config(
+        config.get_section(config.config_ini_section),
+        url=SQLALCHEMY_DATABASE_URL,
+        poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    with connectable.connect() as connection:
+        context.configure(connection=connection, target_metadata=target_metadata)
+        with context.begin_transaction():
+            context.run_migrations()
 
-
-if __name__ == "__main__":
-    asyncio.run(run_migrations_online())
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

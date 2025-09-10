@@ -1,44 +1,58 @@
-import asyncio
 from logging.config import fileConfig
-
-from myapp.models import Base  # 🚨 실제 프로젝트 모델 Base로 바꿔주세요
-from sqlalchemy.ext.asyncio import create_async_engine
-
+from sqlalchemy import create_engine, pool
 from alembic import context
+import os
+import sys
 
-# Alembic Config 객체 (alembic.ini 사용)
+# 프로젝트 루트 경로 추가
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Alembic config
 config = context.config
 
-# Logging 설정
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# target_metadata: 자동으로 마이그레이션 생성 시 참조
+# SQLAlchemy Base & 모델 import
+from app.db.base import Base  # Base.metadata
+from app.models.user import User  # User 모델 import
+from app.models.diary import Diary  # Diary 모델 import
+
 target_metadata = Base.metadata
 
+# MySQL 연결 URL
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://diary_user:qwer1234@localhost:3306/diary_db"
 
-def do_run_migrations(connection):
-    """
-    실제 migration 실행 로직 (동기 방식)
-    """
-    context.configure(connection=connection, target_metadata=target_metadata)
+def run_migrations_offline():
+    """오프라인 모드 (SQL문만 생성)"""
+    context.configure(
+        url=SQLALCHEMY_DATABASE_URL,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
 
     with context.begin_transaction():
         context.run_migrations()
 
-
-async def run_migrations_online():
-    """
-    비동기 DB 엔진 생성 후 migration 실행
-    """
-    connectable = create_async_engine(
-        config.get_main_option("sqlalchemy.url"),
-        future=True,
+def run_migrations_online():
+    """온라인 모드 (DB 연결 후 실행)"""
+    connectable = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        poolclass=pool.NullPool,
     )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata
+        )
 
+        with context.begin_transaction():
+            context.run_migrations()
 
-if __name__ == "__main__":
-    asyncio.run(run_migrations_online())
+# 모드에 따라 실행
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

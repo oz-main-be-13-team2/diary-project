@@ -9,4 +9,4 @@ class User(Base):
     username = Column(String(50), nullable=False)
     password_hash = Column(String(255), nullable=False)
 
-    bookmarks = relationship("Bookmark", back_populates="user")
+    bookmarks = relationship("Bookmark", back_populates="user_rel")

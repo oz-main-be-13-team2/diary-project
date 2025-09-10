@@ -7,7 +7,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.include_router(diary_router, prefix="/api/v1/diaries", tags=["diaries"])
+app.include_router(diary_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():

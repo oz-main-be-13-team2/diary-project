@@ -1,15 +1,24 @@
 # app/db/session.py
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-# MySQL 연결 URL
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://diary_user:your_password@localhost:3306/diary_db"
+# MySQL Async URL (aiomysql 사용)
+DATABASE_URL = "mysql+aiomysql://diary_user:qwer1234@localhost:3306/diary_db"
 
-# SQLAlchemy 엔진 생성
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    pool_pre_ping=True,  # 연결 유지 체크
+# AsyncEngine 생성
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=True,  # 쿼리 로그 확인
 )
 
-# 세션 생성
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# AsyncSession 생성
+async_session = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
+
+# FastAPI 의존성 함수
+async def get_db() -> AsyncSession:
+    async with async_session() as session:
+        yield session

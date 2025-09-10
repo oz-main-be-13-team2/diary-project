@@ -35,6 +35,9 @@ import app.models.bookmark   # noqa: F401
 
 target_metadata = Base.metadata
 
+# MySQL 연결 URL
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://diary_user:qwer1234@localhost:3306/diary_db"
+
 def run_migrations_offline():
     """오프라인 모드: SQL 스크립트 생성"""
     url = SQLALCHEMY_DATABASE_URL
@@ -51,13 +54,21 @@ def do_run_migrations(connection):
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
+        literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
         compare_server_default=True,
     )
+
     with context.begin_transaction():
         context.run_migrations()
 
+def run_migrations_online():
+    """온라인 모드 (DB 연결 후 실행)"""
+    connectable = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        poolclass=pool.NullPool,
+    )
 
 def run_migrations_offline():
     """오프라인 모드: 연결 없이 autogenerate/SQL 출력 등"""

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.models.question import Question
 
-router = APIRouter()
+router = APIRouter(prefix="/questions", tags=["questions"])
 
 @router.get("/questions/daily") # GET /questions/daily 엔드포인트: 데이터베이스에서 랜덤 자기성찰 질문을 하나 제공
 async def get_daily_question(db: AsyncSession = Depends(get_db)):

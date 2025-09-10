@@ -10,12 +10,12 @@ from app.models.quote import Quote
 from app.models.bookmark import Bookmark
 
 
-router = APIRouter()
+router = APIRouter(prefix="/quotes", tags=["quotes"])
 
 class BookmarkAction(BaseModel):
     action: Literal["bookmark", "unbookmark"]
 
-@router.get("/quotes/random") # GET /quotes/random 엔드포인트: 데이터베이스에서 랜덤 명언을 하나 제공
+@router.get("/random") # GET /quotes/random 엔드포인트: 데이터베이스에서 랜덤 명언을 하나 제공
 async def get_random_quote(db: AsyncSession = Depends(get_db)):
 
     # 데이터베이스에 있는 전체 명언의 개수를 비동기적으로 조회
@@ -37,7 +37,7 @@ async def get_random_quote(db: AsyncSession = Depends(get_db)):
         "author": random_quote.author,
     }
 
-@router.post("/quotes/{quote_id}/bookmark") #POST /quotes/{quote_id}/bookmark 엔드포인트: 특정 명언을 북마크하거나 해제
+@router.post("/{quote_id}/bookmark") #POST /quotes/{quote_id}/bookmark 엔드포인트: 특정 명언을 북마크하거나 해제
 async def bookmark_quote(
         quote_id: int, # URL 경로에서 명언 ID 받기
         request_body: BookmarkAction, # 요청 본문에서 action값 받는다.

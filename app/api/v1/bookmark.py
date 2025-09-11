@@ -11,7 +11,7 @@ router = APIRouter(prefix="/bookmarks", tags=["bookmarks"])
 @router.get("/", response_model=List[QuoteSchema])
 async def get_bookmarks(session: AsyncSession = Depends(get_db)):
     """
-    북마크된 명언 목록을 반환합니다.
+    북마크된 명언 목록을 반환
     """
     result = await session.execute(
         select(Quote).where(Quote.is_bookmarked == True)

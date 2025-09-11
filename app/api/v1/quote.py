@@ -17,7 +17,9 @@ class BookmarkAction(BaseModel):
 
 @router.get("/random") # GET /quotes/random 엔드포인트: 데이터베이스에서 랜덤 명언을 하나 제공
 async def get_random_quote(db: AsyncSession = Depends(get_db)):
-
+    """
+    랜덤 명언 하나 제공
+    """
     # 데이터베이스에 있는 전체 명언의 개수를 비동기적으로 조회
     count = await db.scalar(select(func.count(Quote.id)))
     # 명언이 하나도 없으면 HTTP 404 에러를 반환

@@ -9,7 +9,9 @@ router = APIRouter(prefix="/questions", tags=["questions"])
 
 @router.get("/daily") # GET /questions/daily 엔드포인트: 데이터베이스에서 랜덤 자기성찰 질문을 하나 제공
 async def get_daily_question(db: AsyncSession = Depends(get_db)):
-
+    """
+    랜덤 질문 하나 제공
+    """
     # 1. 데이터베이스에 있는 전체 질문의 개수를 비동기적으로 조회
     count = await db.scalar(select(func.count(Question.id)))
     # 2. 만약 질문이 하나도 없다면 HTTP 404 에러를 반환

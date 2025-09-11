@@ -1,3 +1,5 @@
+# 사용자(User) 모델 정의
+
 from sqlalchemy import Column, Integer, String
 from app.db.base import Base
 from sqlalchemy.orm import relationship

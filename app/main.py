@@ -27,4 +27,4 @@ app.include_router(bookmark.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "명언 및 북마크 API에 오신 것을 환영합니다!"}
+    return {"명언 및 북마크 API에 오신 것을 환영합니다!"}

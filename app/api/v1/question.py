@@ -7,7 +7,7 @@ from app.models.question import Question
 
 router = APIRouter(prefix="/questions", tags=["questions"])
 
-@router.get("/questions/daily") # GET /questions/daily 엔드포인트: 데이터베이스에서 랜덤 자기성찰 질문을 하나 제공
+@router.get("/daily") # GET /questions/daily 엔드포인트: 데이터베이스에서 랜덤 자기성찰 질문을 하나 제공
 async def get_daily_question(db: AsyncSession = Depends(get_db)):
 
     # 1. 데이터베이스에 있는 전체 질문의 개수를 비동기적으로 조회

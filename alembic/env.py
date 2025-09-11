@@ -35,6 +35,8 @@ import app.models.bookmark   # noqa: F401
 
 target_metadata = Base.metadata
 
+# MySQL 연결 URL
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://swsw:qwer1234@localhost:5432/sw_db"
 
 def run_migrations_offline():
     """오프라인 모드: SQL 스크립트 생성"""

@@ -1,19 +1,34 @@
 from fastapi import APIRouter, Depends
-from typing import List
+from typing import List, Dict, Any
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.db.session import get_db  # get_db 함수를 사용하도록 수정
+from sqlalchemy.orm import selectinload
+from app.db.session import get_db
 from app.models.quote import Quote
-from app.schemas.quote import Quote as QuoteSchema
+from app.models.bookmark import Bookmark
 
-router = APIRouter(prefix="/bookmarks", tags=["bookmarks"])
+router = APIRouter(tags=["bookmarks"])
 
-@router.get("/", response_model=List[QuoteSchema])
+@router.get("/bookmarks", response_model=List[Dict[str, Any]])
 async def get_bookmarks(session: AsyncSession = Depends(get_db)):
     """
-    북마크된 명언 목록을 반환
+    북마크된 명언 목록을 반환합니다.
     """
+    # Bookmark 테이블을 조회하고, 'quote' 관계를 통해 명언 정보도 함께 로드합니다.
     result = await session.execute(
-        select(Quote).where(Quote.is_bookmarked == True)
+        select(Bookmark).options(selectinload(Bookmark.quote))
     )
-    return result.scalars().all()
+    bookmarks = result.scalars().all()
+
+    # 조회된 Bookmark 객체에서 Quote 정보를 추출하여 리스트로 반환합니다.
+    bookmarked_quotes = [
+        {
+            "id": bookmark.quote.id,
+            "content": bookmark.quote.content,
+            "author": bookmark.quote.author,
+            "is_bookmarked": True
+        }
+        for bookmark in bookmarks
+    ]
+
+    return bookmarked_quotes

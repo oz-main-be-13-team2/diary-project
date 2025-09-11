@@ -11,6 +11,6 @@ class Quote(Base): # 명언 테이블
     author = Column(String(100))
 
     is_bookmarked = Column(Boolean, default=False)
-    # bookmarks = relationship("Bookmark", back_populates="quote_rel")
+    bookmarks = relationship("Bookmark", back_populates="quote")
     # questions = relationship("Question", back_populates="quote_rel")
 

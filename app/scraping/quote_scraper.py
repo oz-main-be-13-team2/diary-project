@@ -9,12 +9,13 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
+# 명언을 스크래핑하고 데이터베이스에 저장하는 함수
 async def scrape_and_save_quotes():
     print("명언 스크래핑을 시작합니다.")
     base_url = "https://quotes.toscrape.com/"
     url = base_url
 
-    while url:
+    while url: # 다음 페이지 링크가 없을 때까지 반복
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -44,22 +45,23 @@ async def scrape_and_save_quotes():
                             await session.rollback()
                             logging.warning(f"이미 존재하는 명언입니다. 건너뜁니다: {content[:30]}...")
 
-            next_link = soup.find("li", class_="next")
+            next_link = soup.find("li", class_="next") # 다음 페이지로 이동하기 위한 next 클래스의 li요소 찾기
             url = f"{base_url}{next_link.find('a')['href']}" if next_link else None
 
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as e: # 웹 요청 중 발생할 수 있는 오류 처리
             logging.error(f"웹 요청 중 오류가 발생했습니다: {e}")
-            break
-        except Exception as e:
+            break # 오류 발생 시 반복문 종료
+        except Exception as e: # 그 외 일반적인 예외 처리
             logging.error(f"데이터 저장 중 오류가 발생했습니다: {e}")
-            break
+            break # 오류 발생 시 반복문 종료
 
     print("명언 스크래핑이 완료되었습니다.")
 
+# 데이터베이스 테이블을 생성하는 비동기 함수
 async def create_tables():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
+# 스크립트가 직접 실행될 때만 아래 코드 실행
 if __name__ == "__main__":
     async def main():
         await create_tables()

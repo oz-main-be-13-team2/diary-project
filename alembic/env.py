@@ -1,58 +1,98 @@
-# Alembic 환경설정 파일 (PostgreSQL + 비동기 지원)
-
-from logging.config import fileConfig
+# alembic/env.py
+import os
+import sys
 import asyncio
-from sqlalchemy import pool
-from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import create_async_engine
+from logging.config import fileConfig
+
 from alembic import context
+from sqlalchemy.ext.asyncio import async_engine_from_config
 
-# Base 메타데이터 import (모델들을 모두 불러와야 함)
-from app.db.base import Base
-from app.models import user, diary  # 모델 import 해서 메타데이터 반영
-
-# Alembic Config 객체 (alembic.ini 파일 참조)
+# ------------------------
+# 1) Alembic 기본 설정
+# ------------------------
 config = context.config
-
-# 로깅 설정
-if config.config_file_name is not None:
+if config.config_file_name:
     fileConfig(config.config_file_name)
 
-# 마이그레이션 대상 메타데이터 (모델의 Base.metadata)
+# ------------------------
+# 2) 프로젝트 경로 추가
+# ------------------------
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if BASE_DIR not in sys.path:
+    sys.path.append(BASE_DIR)
+
+# ------------------------
+# 3) Base 및 모델 import
+# ------------------------
+from app.db.base import Base
+
+# 모델 모듈 "자체"를 import 해서 클래스 정의가 실행되게 함
+import app.models.user       # noqa: F401
+import app.models.diary      # noqa: F401
+import app.models.quote      # noqa: F401
+import app.models.question   # noqa: F401
+import app.models.bookmark   # noqa: F401
+
 target_metadata = Base.metadata
 
+# MySQL 연결 URL
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://swsw:qwer1234@localhost:5432/sw_db"
 
-def run_migrations_offline() -> None:
-    """오프라인 모드 (SQL 스크립트만 생성)"""
-    url = config.get_main_option("sqlalchemy.url")
+def run_migrations_offline():
+    """오프라인 모드: SQL 스크립트 생성"""
+    url = SQLALCHEMY_DATABASE_URL
+    context.configure(url=url, target_metadata=target_metadata, literal_binds=True)
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+def do_run_migrations(connection):
+    """동기 컨텍스트에서 Alembic 환경 구성 및 실행"""
+    # 디버그: Alembic이 인식한 테이블 이름 출력
+    context.config.print_stdout(f"Loaded tables: {list(target_metadata.tables.keys())}")
+
     context.configure(
-        url=url,
+        connection=connection,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
 
-def do_run_migrations(connection: Connection) -> None:
-    """실제 마이그레이션 실행"""
-    context.configure(connection=connection, target_metadata=target_metadata)
-
+def run_migrations_offline():
+    """오프라인 모드: 연결 없이 autogenerate/SQL 출력 등"""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
 
-async def run_migrations_online() -> None:
-    """온라인 모드 (DB에 직접 반영)"""
-    url = config.get_main_option("sqlalchemy.url")
-    connectable = create_async_engine(url, poolclass=pool.NullPool)
-
+async def run_migrations_online():
+    """온라인 모드: 실제 DB에 연결해서 실행(autogenerate 포함)"""
+    connectable = async_engine_from_config(
+        config.get_section(config.config_ini_section),
+        prefix="sqlalchemy.",
+        future=True,
+    )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
 
+# ------------------------
+# 4) 분기 "즉시" 실행 (중요!)
+# ------------------------
 if context.is_offline_mode():
     run_migrations_offline()
 else:

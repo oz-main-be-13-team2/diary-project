@@ -1,14 +1,18 @@
 from fastapi import FastAPI
-from app.api.v1.diary import router as diary_router
+from app.api.v1 import diary, quote, question, bookmark
 
 app = FastAPI(
     title="일기 CRUD API",
-    description="FastAPI + SQLAlchemy 기반 일기 CRUD",
+    description="일기 CRUD + 명언 + 질문 + 북마크",
     version="1.0.0"
 )
 
-app.include_router(diary_router, prefix="/api/v1")
+# 공통 prefix
+app.include_router(diary.router, prefix="/api/v1")
+app.include_router(quote.router, prefix="/api/v1")
+app.include_router(question.router, prefix="/api/v1")
+app.include_router(bookmark.router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():
-    return {"message": "일기 CRUD API에 오신 것을 환영합니다!"}
+    return {"message": "Diary 프로젝트에 오신 것을 환영합니다!"}

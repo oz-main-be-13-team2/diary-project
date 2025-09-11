@@ -21,6 +21,8 @@ if config.config_file_name is not None:
 # 마이그레이션 대상 메타데이터 (모델의 Base.metadata)
 target_metadata = Base.metadata
 
+# MySQL 연결 URL
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://swsw:qwer1234@localhost:5432/sw_db"
 
 def run_migrations_offline() -> None:
     """오프라인 모드 (SQL 스크립트만 생성)"""

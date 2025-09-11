@@ -4,7 +4,6 @@ from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from app.db.session import get_db
-from app.models.quote import Quote
 from app.models.bookmark import Bookmark
 
 router = APIRouter(tags=["bookmarks"])

@@ -1,35 +1,28 @@
-# 데이터베이스 연결 및 세션 관리 (PostgreSQL 비동기 버전)
-
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
 import os
+from typing import AsyncGenerator
+from dotenv import load_dotenv # .env 파일 로드를 위한 라이브러리
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-# 환경변수에서 DB 접속 정보 불러오기 (없으면 기본값 사용)
-DB_USER = os.getenv("DB_USER", "diary_user")
-DB_PASS = os.getenv("DB_PASS", "qwer1234")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5432")
-DB_NAME = os.getenv("DB_NAME", "diary_db")
+load_dotenv()
 
-# PostgreSQL + asyncpg 드라이버 사용
-DATABASE_URL = "postgresql+asyncpg://diary_user:qwer1234@localhost:5432/diary_db"
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+
 # 비동기 엔진 생성
 engine = create_async_engine(
     DATABASE_URL,
-    echo=False,   # SQL 로그 출력 여부 (개발할 땐 True로 켜도 됨)
-    future=True,
+    echo=True # 개발 중 쿼리 로그 확인용으로 True로 설정
 )
 
-# 세션 팩토리 생성
-AsyncSessionLocal = sessionmaker(
-    bind=engine,
+# 비동기 세션 생성기 / DB와 상호작용
+async_session_maker = async_sessionmaker(
+    engine,
     class_=AsyncSession,
-    expire_on_commit=False,
-    autoflush=False,
-    autocommit=False,
+    expire_on_commit=False # 커밋이 완료된 후에도 세션에 있는 객체들을 만료시키지 않도록 설정
+    # False로 설정하면, 커밋 후에도 객체에 접근할 수 있어 객체 상태 유지에 유리
 )
 
-# FastAPI 의존성 주입용 함수
-async def get_db() -> AsyncSession:
-    async with AsyncSessionLocal() as session:
+# Fastapi 의존성 주입 함수 / 각 요청마다 DB 세션 생성, 작업이 끝나면 닫는다
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_maker() as session:
         yield session

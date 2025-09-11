@@ -1,32 +1,32 @@
+# Alembic 환경설정 파일 (PostgreSQL + 비동기 지원)
+
 from logging.config import fileConfig
-from sqlalchemy import create_engine, pool
+import asyncio
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
-import os
-import sys
 
-# 프로젝트 루트 경로 추가
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Base 메타데이터 import (모델들을 모두 불러와야 함)
+from app.db.base import Base
+from app.models import user, diary  # 모델 import 해서 메타데이터 반영
 
-# Alembic config
+# Alembic Config 객체 (alembic.ini 파일 참조)
 config = context.config
 
+# 로깅 설정
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# SQLAlchemy Base & 모델 import
-from app.db.base import Base  # Base.metadata
-from app.models.user import User  # User 모델 import
-from app.models.diary import Diary  # Diary 모델 import
-
+# 마이그레이션 대상 메타데이터 (모델의 Base.metadata)
 target_metadata = Base.metadata
 
-# MySQL 연결 URL
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://diary_user:qwer1234@localhost:3306/diary_db"
 
-def run_migrations_offline():
-    """오프라인 모드 (SQL문만 생성)"""
+def run_migrations_offline() -> None:
+    """오프라인 모드 (SQL 스크립트만 생성)"""
+    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=SQLALCHEMY_DATABASE_URL,
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -35,24 +35,25 @@ def run_migrations_offline():
     with context.begin_transaction():
         context.run_migrations()
 
-def run_migrations_online():
-    """온라인 모드 (DB 연결 후 실행)"""
-    connectable = create_engine(
-        SQLALCHEMY_DATABASE_URL,
-        poolclass=pool.NullPool,
-    )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata
-        )
+def do_run_migrations(connection: Connection) -> None:
+    """실제 마이그레이션 실행"""
+    context.configure(connection=connection, target_metadata=target_metadata)
 
-        with context.begin_transaction():
-            context.run_migrations()
+    with context.begin_transaction():
+        context.run_migrations()
 
-# 모드에 따라 실행
+
+async def run_migrations_online() -> None:
+    """온라인 모드 (DB에 직접 반영)"""
+    url = config.get_main_option("sqlalchemy.url")
+    connectable = create_async_engine(url, poolclass=pool.NullPool)
+
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+
+
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    run_migrations_online()
+    asyncio.run(run_migrations_online())

@@ -1,3 +1,4 @@
+
 [tool.poetry]
 name = "diary-project"
 version = "0.1.0"

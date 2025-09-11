@@ -1,13 +1,29 @@
-from tortoise import fields
-from tortoise.models import Model
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
+from app.database import Base
 
 
-class User(Model):
-    id = fields.IntField(pk=True)
-    email = fields.CharField(max_length=255, unique=True)
-    password_hash = fields.CharField(max_length=255)
-    nickname = fields.CharField(max_length=50, null=True)
-    created_at = fields.DatetimeField(auto_now_add=True)
+class User(Base):
+    __tablename__ = "users"
 
-    def __str__(self):
-        return self.email
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    nickname = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    tokens = relationship("TokenBlacklist", back_populates="user")
+
+
+class TokenBlacklist(Base):
+    __tablename__ = "token_blacklist"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, nullable=False)
+    expired_at = Column(DateTime, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    user = relationship("User", back_populates="tokens")
